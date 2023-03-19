@@ -251,7 +251,7 @@ func SqlGetContextsByUid(uid int) ([]Context, error) {
     return contexts, nil
 }
 
-func SqlAddContext10(uid int, question string, answer string) ([]Context,error) {
+func SqlAddContextLimit(uid int, question string, answer string) ([]Context,error) {
 	// 根据uid查询记录到变量ctx中
 	var ctx []Context
 	ctx, err := SqlGetContextsByUid(uid)

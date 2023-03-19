@@ -31,6 +31,22 @@ func OpenAI_35(issue, key string) string {
 	}
 	return resp.Choices[0].Message.Content
 }
+func OpenAI_35_Context(msg []openai.ChatCompletionMessage,key string) string {
+	client := openai.NewClient(key)
+	resp, err := client.CreateChatCompletion(
+		context.Background(),
+		openai.ChatCompletionRequest{
+			Model: openai.GPT3Dot5Turbo,
+			Messages: msg,
+		},
+	)
+
+	if err != nil {
+		fmt.Printf("ChatCompletion error: %v\n", err)
+		return ""
+	}
+	return resp.Choices[0].Message.Content
+}
 
 type Billing struct {
 	Object         string  `json:"object"`

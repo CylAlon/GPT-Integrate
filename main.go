@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -32,12 +30,10 @@ func main() {
 	// SqlAddContext10(0, "测试14", "测试14")
 	// SqlAddContext10(0, "测试15", "测试15")
 	// SqlAddContext10(0, "测试16", "测试16")
-	s,_:=SqlAddContext10(0, "测试17", "测试17")
-	fmt.Println(s)
+	// s,_:=SqlAddContext10(0, "测试17", "测试17")
+	// fmt.Println(s)
 
-
-
-	// web_gin()
+	web_gin()
 }
 func web_gin() {
 	r := gin.Default()
