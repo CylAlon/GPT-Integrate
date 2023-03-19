@@ -1,2 +1,2 @@
 # dingding_gpt
-OpAI接入钉钉
+OpenAI接入钉钉
