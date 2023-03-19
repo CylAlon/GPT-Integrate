@@ -11,41 +11,68 @@ import (
 )
 
 func OpenAI_35(issue, key string) string {
-	client := openai.NewClient(key)
-	resp, err := client.CreateChatCompletion(
-		context.Background(),
-		openai.ChatCompletionRequest{
-			Model: openai.GPT3Dot5Turbo,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: issue,
-				},
-			},
+	msg := []openai.ChatCompletionMessage{
+		{
+			Role:    openai.ChatMessageRoleUser,
+			Content: issue,
 		},
-	)
-
-	if err != nil {
-		fmt.Printf("ChatCompletion error: %v\n", err)
-		return ""
 	}
-	return resp.Choices[0].Message.Content
+	return OpenAI_35_Context(msg, key)
+	// result := make(chan string)
+	// go func() {
+	// 	client := openai.NewClient(key)
+	// 	resp, err := client.CreateChatCompletion(
+	// 		context.Background(),
+	// 		openai.ChatCompletionRequest{
+	// 			Model: openai.GPT3Dot5Turbo,
+	// 			Messages: []openai.ChatCompletionMessage{
+	// 				{
+	// 					Role:    openai.ChatMessageRoleUser,
+	// 					Content: issue,
+	// 				},
+	// 			},
+	// 		},
+	// 	)
+
+	// 	if err != nil {
+	// 		fmt.Printf("ChatCompletion error: %v\n", err)
+	// 		return
+	// 	}
+	// 	result <- resp.Choices[0].Message.Content
+	// }()
+	// select {
+	// case <-time.After(60 * time.Second):
+	// 	fmt.Println("timeout")
+	// 	return ""
+	// case res := <-result:
+	// 	return res
+	// }
 }
-func OpenAI_35_Context(msg []openai.ChatCompletionMessage,key string) string {
-	client := openai.NewClient(key)
-	resp, err := client.CreateChatCompletion(
-		context.Background(),
-		openai.ChatCompletionRequest{
-			Model: openai.GPT3Dot5Turbo,
-			Messages: msg,
-		},
-	)
+func OpenAI_35_Context(msg []openai.ChatCompletionMessage, key string) string {
+	result := make(chan string)
+	go func() {
+		client := openai.NewClient(key)
+		resp, err := client.CreateChatCompletion(
+			context.Background(),
+			openai.ChatCompletionRequest{
+				Model:    openai.GPT3Dot5Turbo,
+				Messages: msg,
+			},
+		)
 
-	if err != nil {
-		fmt.Printf("ChatCompletion error: %v\n", err)
+		if err != nil {
+			fmt.Printf("ChatCompletion error: %v\n", err)
+			return
+		}
+		result <- resp.Choices[0].Message.Content
+	}()
+	select {
+	case <-time.After(60 * time.Second):
+		fmt.Println("timeout")
 		return ""
+	case res := <-result:
+		return res
 	}
-	return resp.Choices[0].Message.Content
 }
 
 type Billing struct {
@@ -87,7 +114,7 @@ func InitAiCli(key string) *resty.Client {
 
 	return resty.New().SetTimeout(10*time.Second).SetHeader("Authorization", fmt.Sprintf("Bearer %s", key)).SetRetryCount(3).SetRetryWaitTime(2 * time.Second)
 }
-func OpenAI_Balance(key string) (string) {
+func OpenAI_Balance(key string) string {
 	var data Billing
 	url := "https://api.openai.com/dashboard/billing/credit_grants"
 	resp, err := InitAiCli(key).R().Get(url)
@@ -101,6 +128,5 @@ func OpenAI_Balance(key string) (string) {
 	t1 := time.Unix(int64(data.Grants.Data[0].EffectiveAt), 0)
 	t2 := time.Unix(int64(data.Grants.Data[0].ExpiresAt), 0)
 	msg := fmt.Sprintf("💵 已用: 💲%v\n💵 剩余: 💲%v\n⏳ 有效时间: 从 %v 到 %v\n", fmt.Sprintf("%.2f", data.TotalUsed), fmt.Sprintf("%.2f", data.TotalAvailable), t1.Format("2006-01-02 15:04:05"), t2.Format("2006-01-02 15:04:05"))
-	fmt.Println(msg)
 	return msg
 }
