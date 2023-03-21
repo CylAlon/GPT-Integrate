@@ -12,7 +12,7 @@ var DB *sql.DB
 func init() {
 	// 初始化DB
 	var err error
-	DB, err = sql.Open("sqlite3", "./cyl_chat.db")
+	DB, err = sql.Open("sqlite3", "./dingdb.db")
 	if err != nil {
 		panic(err)
 	}
@@ -40,16 +40,19 @@ type Context struct {
 func addUser(user User) error {
 	tx, err := DB.Begin()
 	if err != nil {
+		Infof("addUser err: %v", err)
 		return err
 	}
 	stmt, err := tx.Prepare("INSERT INTO user(name, key) values(?, ?)")
 	if err != nil {
+		Infof("addUser err: %v", err)
 		return err
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(user.Name, user.Key)
 	if err != nil {
 		tx.Rollback()
+		Infof("addUser err: %v", err)
 		return err
 	}
 	tx.Commit()
@@ -62,6 +65,7 @@ func SqlAddUser(user User) error {
 		if err == sql.ErrNoRows {
 			return addUser(user)
 		}
+		Infof("SqlAddUser err: %v", err)
 		return err
 	}
 	return SqlUpdateUser(user)
@@ -71,16 +75,19 @@ func SqlAddUser(user User) error {
 func SqlDeleteUserForId(id int) error {
 	tx, err := DB.Begin()
 	if err != nil {
+		Infof("SqlDeleteUserForId err: %v", err)
 		return err
 	}
 	stmt, err := tx.Prepare("DELETE FROM user WHERE id=?")
 	if err != nil {
+		Infof("SqlDeleteUserForId err: %v", err)
 		return err
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(id)
 	if err != nil {
 		tx.Rollback()
+		Infof("SqlDeleteUserForId err: %v", err)
 		return err
 	}
 	tx.Commit()
@@ -89,16 +96,19 @@ func SqlDeleteUserForId(id int) error {
 func SqlDeleteUserForName(name string) error {
 	tx, err := DB.Begin()
 	if err != nil {
+		Infof("SqlDeleteUserForName err: %v", err)
 		return err
 	}
 	stmt, err := tx.Prepare("DELETE FROM user WHERE name=?")
 	if err != nil {
+		Infof("SqlDeleteUserForName err: %v", err)
 		return err
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(name)
 	if err != nil {
 		tx.Rollback()
+		Infof("SqlDeleteUserForName err: %v", err)
 		return err
 	}
 	tx.Commit()
@@ -109,16 +119,19 @@ func SqlDeleteUserForName(name string) error {
 func SqlUpdateUser(user User) error {
 	tx, err := DB.Begin()
 	if err != nil {
+		Infof("SqlUpdateUser err: %v", err)
 		return err
 	}
 	stmt, err := tx.Prepare("UPDATE user SET name=?, key=? WHERE id=?")
 	if err != nil {
+		Infof("SqlUpdateUser err: %v", err)
 		return err
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(user.Name, user.Key, user.Id)
 	if err != nil {
 		tx.Rollback()
+		Infof("SqlUpdateUser err: %v", err)
 		return err
 	}
 	tx.Commit()
@@ -130,6 +143,7 @@ func SqlGetUserForid(id int) (User, error) {
 	var user User
 	err := DB.QueryRow("SELECT id, name, key FROM user WHERE id=?", id).Scan(&user.Id, &user.Name, &user.Key)
 	if err != nil {
+		Infof("SqlGetUserForid err: %v", err)
 		return user, err
 	}
 	return user, nil
@@ -138,6 +152,7 @@ func SqlGetUserForName(name string)(User, error){
 	var user User
 	err := DB.QueryRow("SELECT id, name, key FROM user WHERE name=?", name).Scan(&user.Id, &user.Name, &user.Key)
 	if err != nil {
+		Infof("SqlGetUserForName err: %v", err)
 		return user, err
 	}
 	return user, nil
@@ -147,16 +162,19 @@ func SqlGetUserForName(name string)(User, error){
 func SqlAddContext(record Context) error {
     tx, err := DB.Begin()
     if err != nil {
+		Infof("SqlAddContext err: %v", err)
         return err
     }
     stmt, err := tx.Prepare("INSERT INTO context(uid, question, answer) values(?, ?, ?)")
     if err != nil {
+		Infof("SqlAddContext err: %v", err)
         return err
     }
     defer stmt.Close()
     _, err = stmt.Exec(record.Uid, record.Question, record.Answer)
     if err != nil {
         tx.Rollback()
+		Infof("SqlAddContext err: %v", err)
         return err
     }
     tx.Commit()
@@ -167,16 +185,19 @@ func SqlAddContext(record Context) error {
 func SqlDeleteContextForId(id int) error {
     tx, err := DB.Begin()
     if err != nil {
+		Infof("SqlDeleteContextForId err: %v", err)
         return err
     }
     stmt, err := tx.Prepare("DELETE FROM context WHERE id=?")
     if err != nil {
+		Infof("SqlDeleteContextForId err: %v", err)
         return err
     }
     defer stmt.Close()
     _, err = stmt.Exec(id)
     if err != nil {
         tx.Rollback()
+		Infof("SqlDeleteContextForId err: %v", err)
         return err
     }
     tx.Commit()
@@ -185,16 +206,19 @@ func SqlDeleteContextForId(id int) error {
 func SqlDeleteContextForUid(uid int) error {
 	tx, err := DB.Begin()
 	if err != nil {
+		Infof("SqlDeleteContextForUid err: %v", err)
 		return err
 	}
 	stmt, err := tx.Prepare("DELETE FROM context WHERE uid=?")
 	if err != nil {
+		Infof("SqlDeleteContextForUid err: %v", err)
 		return err
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(uid)
 	if err != nil {
 		tx.Rollback()
+		Infof("SqlDeleteContextForUid err: %v", err)
 		return err
 	}
 	tx.Commit()
@@ -205,16 +229,19 @@ func SqlDeleteContextForUid(uid int) error {
 func updateContext(record Context) error {
     tx, err := DB.Begin()
     if err != nil {
+		Infof("updateContext err: %v", err)
         return err
     }
     stmt, err := tx.Prepare("UPDATE context SET uid=?, question=?, answer=? WHERE id=?")
     if err != nil {
+		Infof("updateContext err: %v", err)
         return err
     }
     defer stmt.Close()
     _, err = stmt.Exec(record.Uid, record.Question, record.Answer, record.Id)
     if err != nil {
         tx.Rollback()
+		Infof("updateContext err: %v", err)
         return err
     }
     tx.Commit()
@@ -226,6 +253,7 @@ func SqlGetContextForId(id int) (Context, error) {
     var record Context
     err := DB.QueryRow("SELECT id, uid, question, answer FROM context WHERE id=?", id).Scan(&record.Id, &record.Uid, &record.Question, &record.Answer)
     if err != nil {
+		Infof("SqlGetContextForId err: %v", err)
         return record, err
     }
     return record, nil
@@ -234,6 +262,7 @@ func SqlGetContextsByUid(uid int) ([]Context, error) {
     var contexts []Context
     rows, err := DB.Query("SELECT id, uid, question, answer FROM context WHERE uid=?", uid)
     if err != nil {
+		Infof("SqlGetContextsByUid err: %v", err)
         return contexts, err
     }
     defer rows.Close()
@@ -256,6 +285,7 @@ func SqlAddContextLimit(uid int, question string, answer string) ([]Context,erro
 	var ctx []Context
 	ctx, err := SqlGetContextsByUid(uid)
 	if err != nil {
+		Infof("SqlAddContextLimit err: %v", err)
 		return ctx, err
 	}
 	// 判断ctx的长度
@@ -263,6 +293,7 @@ func SqlAddContextLimit(uid int, question string, answer string) ([]Context,erro
 		// 删除最开始的那一条记录
 		err = SqlDeleteContextForId(ctx[0].Id)
 		if err != nil {
+			Infof("SqlAddContextLimit err: %v", err)
 			return ctx, err
 		}
 		// 去掉最开始的那一条记录
@@ -275,11 +306,13 @@ func SqlAddContextLimit(uid int, question string, answer string) ([]Context,erro
 	record.Answer = answer
 	err = SqlAddContext(record)
 	if err != nil {
+		Infof("SqlAddContextLimit err: %v", err)
 		return  ctx,err
 	}
 	// 查询新的记录
 	ctx, err = SqlGetContextsByUid(uid)
 	if err != nil {
+		Infof("SqlAddContextLimit err: %v", err)
 		return ctx, err
 	}
 	return ctx,nil

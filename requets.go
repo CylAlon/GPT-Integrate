@@ -10,11 +10,13 @@ import (
 func HttpGet(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
+		Infof("http get error: %v", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		Infof("http get error: %v", err)
 		return nil, err
 	}
 	return body, nil
@@ -23,6 +25,7 @@ func HttpGet(url string) ([]byte, error) {
 func HttpPost(url string, headers map[string]string, data []byte) ([]byte, error) {
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
 	if err != nil {
+		Infof("http post error: %v", err)
 		return nil, err
 	}
 	for key, value := range headers {
@@ -37,12 +40,14 @@ func HttpPost(url string, headers map[string]string, data []byte) ([]byte, error
 	}
 	resp, err := client.Do(req)
 	if err != nil {
+		Infof("http post error: %v", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		Infof("http post error: %v", err)
 		return nil, err
 	}
 	return body, nil

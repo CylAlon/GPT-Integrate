@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +13,17 @@ type Token struct {
 	AccessToken string `json:"access_token"`
 	ExpiresIn   int    `json:"expires_in"`
 }
+type MediaId struct {
+	Errcode     int    `json:"errcode"`
+	Errmsg      string `json:"errmsg"`
+	MediaId     string `json:"media_id"`
+	CreatedAt   int    `json:"created_at"`
+	Type        string `json:"type"`
+}
+type MsgParam struct {
+	Content string `json:"content"`
+}
+
 
 func Ding_GetToken() {
 	url := Cfg.AccessTokenUrl + "?appkey=" + Cfg.AppKey + "&appsecret=" + Cfg.AppSecret
@@ -22,7 +32,7 @@ func Ding_GetToken() {
 	var token Token
 	err := json.Unmarshal(body, &token)
 	if err != nil {
-		panic(err)
+		Infof("获取token失败")
 	}
 	Cfg.AccessToken = token.AccessToken
 }
@@ -33,21 +43,82 @@ func Ding_SendMsg(msg string) {
 		"Content-Type":                "application/json",
 		"x-acs-dingtalk-access-token": Cfg.AccessToken,
 	}
+	msgparam := MsgParam{
+		Content: msg,
+	}
+	// 将msgparam转为字符串
+	jsonMsgParam, err := json.Marshal(msgparam)
+	if err != nil {
+		Infof("json转换失败")
+	}
+	// "{\"content\":\"" + msg + "\"}",
 	data := map[string]string{
-		"msgParam": "{\"content\":\"" + msg + "\"}",
+		"msgParam": string(jsonMsgParam),
 		"msgKey":   Cfg.MsgKey,
 		"token":    Cfg.RobotAccessToken,
 	}
 	// 将data转为[]byte
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		panic(err)
+		Infof("json转换失败")
+	}
+	// 发送消息
+	b, err := HttpPost(url, header, jsonData)
+	if err != nil {
+		Infof("发送消息失败")
+	}
+	Infof("发送消息的结果是：%s", string(b))
+}
+func Ding_SendMsgSignel(msg string){
+	url := Cfg.SignalChatUrl
+	header := map[string]string{
+		"Content-Type":                "application/json",
+		"x-acs-dingtalk-access-token": Cfg.AccessToken,
+	}
+	data := map[string]string{
+		"msgParam": "{\"content\":\"" + msg + "\"}",
+		"msgKey":   Cfg.MsgKey,
+		"openConversationId":    Cfg.RobotAccessToken,
+		"robotCode":   Cfg.MasterId,
+		// "coolAppCode":   Cfg.CoolAppCode,
+	}
+	// 将data转为[]byte
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		Infof("json转换失败")
 	}
 	// 发送消息
 	_, err = HttpPost(url, header, jsonData)
 	if err != nil {
-		panic(err)
+		Infof("发送消息失败")
 	}
+}
+func Ding_GetMediaId(){
+	url := Cfg.MediaIdUrl
+	header := map[string]string{
+		"Content-Type":                "application/json",
+		"x-acs-dingtalk-access-token": Cfg.AccessToken,
+	}
+	data := map[string]string{
+		"type": "image",
+		"media":   "./icon.png",
+	}
+	// 将data转为[]byte
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		Infof("json转换失败")
+	}
+	// 发送消息
+	body, err := HttpPost(url, header, jsonData)
+	if err != nil {
+		Infof("发送消息失败")
+	}
+	var media MediaId
+	err = json.Unmarshal(body, &media)
+	if err != nil {
+		Infof("获取mediaId失败")
+	}
+	Cfg.MediaId = media.MediaId
 
 }
 
@@ -61,12 +132,13 @@ type Message struct {
 func Ding_GetMsg(c *gin.Context) Message {
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
-		panic(err)
+		Infof("获取消息失败")
 	}
 	var m Message
 	err = json.Unmarshal(body, &m)
 	if err != nil {
-		panic(err)
+		Infof("json转换失败")
 	}
 	return m
 }
+

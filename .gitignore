@@ -1,4 +1,5 @@
-ddgpt
+dingdb.db
 config.json
 go.mod
 go.sum
+/log/

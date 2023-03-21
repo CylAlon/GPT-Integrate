@@ -18,38 +18,25 @@ func OpenAI_35(issue, key string) string {
 		},
 	}
 	return OpenAI_35_Context(msg, key)
-	// result := make(chan string)
-	// go func() {
-	// 	client := openai.NewClient(key)
+}
+func OpenAI_35_Context(msg []openai.ChatCompletionMessage, key string) string {
+	// str:= ""
+	// client := openai.NewClient(key)
 	// 	resp, err := client.CreateChatCompletion(
 	// 		context.Background(),
 	// 		openai.ChatCompletionRequest{
-	// 			Model: openai.GPT3Dot5Turbo,
-	// 			Messages: []openai.ChatCompletionMessage{
-	// 				{
-	// 					Role:    openai.ChatMessageRoleUser,
-	// 					Content: issue,
-	// 				},
-	// 			},
+	// 			Model:    openai.GPT3Dot5Turbo,
+	// 			Messages: msg,
 	// 		},
 	// 	)
 
 	// 	if err != nil {
-	// 		fmt.Printf("ChatCompletion error: %v\n", err)
-	// 		return
+	// 		Errorln("ChatCompletion error:", err)
+	// 		return ""
 	// 	}
-	// 	result <- resp.Choices[0].Message.Content
-	// }()
-	// select {
-	// case <-time.After(60 * time.Second):
-	// 	fmt.Println("timeout")
-	// 	return ""
-	// case res := <-result:
-	// 	return res
-	// }
-}
-func OpenAI_35_Context(msg []openai.ChatCompletionMessage, key string) string {
-	result := make(chan string)
+	// 	str= resp.Choices[0].Message.Content
+	// 	return str
+	result := make(chan string,1)
 	go func() {
 		client := openai.NewClient(key)
 		resp, err := client.CreateChatCompletion(
@@ -59,16 +46,15 @@ func OpenAI_35_Context(msg []openai.ChatCompletionMessage, key string) string {
 				Messages: msg,
 			},
 		)
-
 		if err != nil {
-			fmt.Printf("ChatCompletion error: %v\n", err)
-			return
+			Errorln("ChatCompletion error:", err)
+			return 
 		}
 		result <- resp.Choices[0].Message.Content
 	}()
 	select {
-	case <-time.After(60 * time.Second):
-		fmt.Println("timeout")
+	case <-time.After(60 *5* time.Second):
+		Errorln("ChatCompletion error:", "timeout")
 		return ""
 	case res := <-result:
 		return res
@@ -93,21 +79,6 @@ type Billing struct {
 	} `json:"grants"`
 }
 
-// func OpenAI_Balance(key string) string {
-
-// 	url := "https://api.openai.com/dashboard/billing/credit_grants"
-// 	var data Billing
-// 	body, _ := HttpGet(url)
-// 	err := json.Unmarshal(body, &data)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	t1 := time.Unix(int64(data.Grants.Data[0].EffectiveAt), 0)
-// 	t2 := time.Unix(int64(data.Grants.Data[0].ExpiresAt), 0)
-// 	msg := fmt.Sprintf("💵 已用: 💲%v\n💵 剩余: 💲%v\n⏳ 有效时间: 从 %v 到 %v\n", fmt.Sprintf("%.2f", data.TotalUsed), fmt.Sprintf("%.2f", data.TotalAvailable), t1.Format("2006-01-02 15:04:05"), t2.Format("2006-01-02 15:04:05"))
-// 	fmt.Println(msg)
-// 	return msg
-// }
 
 func InitAiCli(key string) *resty.Client {
 	// return resty.New().SetTimeout(10*time.Second).SetHeader("Authorization", fmt.Sprintf("Bearer %s", Config.ApiKey)).SetProxy(Config.HttpProxy).SetRetryCount(3).SetRetryWaitTime(2 * time.Second)
@@ -119,11 +90,13 @@ func OpenAI_Balance(key string) string {
 	url := "https://api.openai.com/dashboard/billing/credit_grants"
 	resp, err := InitAiCli(key).R().Get(url)
 	if err != nil {
-		panic(err)
+		Infof("OpenAI_Balance error: %v", err)
+		return ""
 	}
 	err = json.Unmarshal(resp.Body(), &data)
 	if err != nil {
-		panic(err)
+		Infof("OpenAI_Balance error: %v", err)
+		return ""
 	}
 	t1 := time.Unix(int64(data.Grants.Data[0].EffectiveAt), 0)
 	t2 := time.Unix(int64(data.Grants.Data[0].ExpiresAt), 0)

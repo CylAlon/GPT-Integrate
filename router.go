@@ -1,25 +1,17 @@
 package main
 
 import (
-	_ "embed"
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	openai "github.com/sashabaranov/go-openai"
 )
 
-// //go:embed static
-// var static embed.FS
+var nameList = make(map[string]string, 8)
 
-// func getFileSystem() http.FileSystem {
-// 	fsys, err := fs.Sub(static, "static")
-// 	if err != nil {
-
-//		}
-//		return http.FS(fsys)
-//	}
 
 func get_root(r *gin.Engine) {
 	r.GET("/", func(c *gin.Context) {
@@ -29,131 +21,160 @@ func get_root(r *gin.Engine) {
 		})
 	})
 }
+func togroup(str string) {
+	fmt.Println("00000")
+	Infof(str)
+	Ding_SendMsg(str)
+}
+func baseins(ins, str_h, name string) bool {
+	res := ""
+	switch ins {
+	case "/h":
+		res = str_h + "/+指令+空格+内容(内容可选) 例如：/balance或者/help\r\n当前有的命令:\r\n/h:查看帮助\r\n/b:查询账户余额\r\n/c:上下文对话"
+	default:
+		return false
+	}
+	togroup(res)
+	return true
+}
 func post_root(r *gin.Engine) {
 	r.POST("/", func(c *gin.Context) {
 		msg := Ding_GetMsg(c)
-		str_h := JoinMsg(msg.SenderNick, "")
-		fmt.Println("接收到来自'", msg.SenderNick, "'的消息")
-		if IsInKey(msg.SenderNick) {
-			select {
-			case <-Flag[msg.SenderNick]:
-				go msg_request(&msg)
-			default:
-				str := str_h + WAIT_LAST_MSG
-				fmt.Println(str)
-				Ding_SendMsg(str)
-			}
-		} else {
-			str := str_h + DENY_ACCESS + "：" + NO_OPENAI_KEY
-			fmt.Println(str)
-			Ding_SendMsg(str)
+		name := msg.SenderNick
+		content := msg.Text.Content
+		ins, issue := dind_msg(content)
+		str_h := JoinMsg(name, "")
+		str := ""
+		Infof("接收到来自'%s'的消息:%s", name, content)
+		if baseins(ins, str_h, name){
+			goto Loop
 		}
-
+		// msg.SenderNick在不在nameList中
+		if _, ok := nameList[name]; ok {
+			// 在缓存则返回等待信息
+			str = str_h + WARING + WAIT_LAST_MSG
+			togroup(str)
+		} else {
+			// 获取这个user的信息
+			user, err := SqlGetUserForName(msg.SenderNick)
+			if err != nil {
+				Infof("没有找到用户:%s", name)
+				user, err = SqlGetUserForid(0)
+				if err != nil {
+					Infof("没有找到默认用户")
+					str = str_h + ERROR + NO_FIND_KEY
+					togroup(str)
+				}
+			} else {
+				// 将这个user的信息存入缓存
+				Lock.Lock()
+				nameList[name] = user.Key
+				Lock.Unlock()
+				go func() {
+					timstart := time.Now()
+					str = msg_request(name, ins, issue)
+					// 删除缓存
+					Lock.Lock()
+					delete(nameList, name)
+					Lock.Unlock()
+					togroup(str)
+					Infof("----------------END----------------%s",time.Since(timstart))
+				}()
+			}
+		}
+		Loop:
 		c.JSON(200, gin.H{
 			"message": "OK",
 		})
 	})
 }
-var ins_list = []string{"h", "b", "c"}
-func is_instr(msg *Message) (ins, text string, isins bool) {
-	data := msg.Text.Content
+
+func dind_msg(dingmsg string) (ins, issue string) {
 	// 去掉首位空格
-	data = strings.TrimSpace(data)
-	if len(data) > 1 && data[0] == '/'{
-		flag:=false
-		// 查看data[1]是否在ins_list中
-		for _, v := range ins_list{
-			if data[1] == v[0]{
-				flag = true
-				break
-			}
-		}
-		if flag{
+	data := strings.TrimSpace(dingmsg)
+	if len(data) >= 2 {
+		if data[0] == '/' {
+			// 取指令
 			ins = data[:2]
-			text = data[2:]
-			return ins, text, true
-		}else{
-			return "", "", false
+			// ins[2]变成小写
+			ins = strings.ToLower(ins)
+			Infof("指令:%s", ins)
+			issue = data[2:]
+			return ins, issue
+		} else {
+			return "", data
 		}
-	}else{
-		return "", "", false
+	} else {
+		return "", ""
 	}
 }
 
-func msg_request(msg *Message) {
-	ins, issue, flag := is_instr(msg)
-	// 将ins转为小写
-	ins = strings.ToLower(ins)
-	str_h := JoinMsg(msg.SenderNick, "")
-	str := ""
+func request_context(name, issue string) string {
 	res := ""
-	// issue = msg.Text.Content
-	key := Cfg.OpenaiKey[msg.SenderNick]
-	if flag {
-		switch ins {
-		case "/h":
-			res = "/+指令+空格+内容(内容可选) 例如：/balance或者/help\r\n当前有的命令:\r\n/h:查看帮助\r\n/b:查询账户余额\r\n/c:上下文对话"
-		case "/b":
-			res = OpenAI_Balance(key)
-		case "/c":
-			fmt.Println("----------Context-----------")
-			user, _ := SqlGetUserForName(msg.SenderNick)
-			ctx, _ := SqlGetContextsByUid(user.Id)
-			length := len(ctx)
-			text := []openai.ChatCompletionMessage{}
-			for i := 0; i < length; i++ {
-				ms := openai.ChatCompletionMessage{
-					Role:    openai.ChatMessageRoleUser,
-					Content: ctx[i].Question,
-				}
-				text = append(text, ms)
-				ms = openai.ChatCompletionMessage{
-					Role:    openai.ChatMessageRoleAssistant,
-					Content: ctx[i].Answer,
-				}
-				text = append(text, ms)
-			}
-			ms := openai.ChatCompletionMessage{
-				Role:    openai.ChatMessageRoleUser,
-				Content: issue,
-			}
-			text = append(text, ms)
-			if issue != "" {
-
-				res = OpenAI_35_Context(text, key)
-			}
-			if length > 0 && res == "" {
-				SqlDeleteUserForId(ctx[length-1].Id)
-			}
-			SqlAddContextLimit(user.Id, issue, res)
-		default:
-			if issue != "" {
-				res = OpenAI_35(issue, key)
-			}
+	user, _ := SqlGetUserForName(name)
+	ctx, _ := SqlGetContextsByUid(user.Id)
+	length := len(ctx)
+	text := []openai.ChatCompletionMessage{}
+	for i := 0; i < length; i++ {
+		ms := openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleUser,
+			Content: ctx[i].Question,
 		}
-	} else {
-		if issue != "" {
-			res = OpenAI_35(issue, key)
+		text = append(text, ms)
+		ms = openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleAssistant,
+			Content: ctx[i].Answer,
 		}
+		text = append(text, ms)
+	}
+	ms := openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleUser,
+		Content: issue,
+	}
+	text = append(text, ms)
+	if issue != "" {
+		res = OpenAI_35_Context(text, nameList[name])
+	}
+	if length > 0 && res == "" {
+		SqlDeleteUserForId(ctx[length-1].Id)
+	}
+	SqlAddContextLimit(user.Id, issue, res)
+	return res
+}
 
-	}
-	if res == "" {
-		str = str_h + "OpenAI返回空"
-	} else {
-		str = str_h + res
-	}
-	fmt.Println("----------SEND-----------")
-	fmt.Println(str)
-	Ding_SendMsg(str)
-	select {
-	case Flag[msg.SenderNick] <- true:
+func msg_request(name, ins, issue string) string {
+	str_h := JoinMsg(name, "")
+	res := ""
+	switch ins {
+	case "/b":
+		res = OpenAI_Balance(nameList[name])
+		if res == "" {
+			res = str_h + ERROR + TIMEOUT
+		} else {
+			res = str_h + res
+		}
+	case "/c":
+		Infof("----------Context-----------")
+		res = request_context(name, issue)
+		if res == "" {
+			res = str_h + ERROR + TIMEOUT
+		} else {
+			res = str_h + res
+		}
+	case "":
+		data := OpenAI_35(issue, nameList[name])
+		if data == "" {
+			res = str_h + ERROR + TIMEOUT
+		} else {
+			res = str_h + data
+		}
 	default:
+		res = str_h + ERROR + NO_FIND_INS
 	}
-	fmt.Println("----------END-----------")
+	return res
 }
 
 func Router(r *gin.Engine) {
-	// r.NoRoute(gin.WrapH(http.FileServer(getFileSystem())))
 	r.Use(Axios())
 	get_root(r)
 	post_root(r)
@@ -173,4 +194,3 @@ func Axios() gin.HandlerFunc {
 		c.Next()
 	}
 }
-

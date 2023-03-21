@@ -4,18 +4,36 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"sync"
 )
 
 // 申明一个config结构体
 var Cfg Config = Config{}
 var Flag map[string]chan bool
 
-const (
-	DENY_ACCESS   = "没有权限"
-	NO_OPENAI_KEY = "没有创建OpenAI的key"
-	WAIT_LAST_MSG = "等待上一条消息回复"
-)
+// 创建一把锁
+var Lock sync.Mutex
 
+const (
+	ERROR         = "❌错误："
+	WARING        = "⚠️警告："
+	WAIT_LAST_MSG = "请等待上一条消息回复"
+	NO_FIND_KEY   = "没有找到key"
+	ISSUE_VOID    = "问题无效"
+	NO_FIND_INS   = "没有找到对应的指令"
+	TIMEOUT       = "访问超时"
+	REVOCATION_MSG = "撤回问题"
+	ANY_OTHER    = "❓请问你其他问题吗？"
+
+
+)
+const (
+	access_token_url = "https://oapi.dingtalk.com/gettoken"
+	group_chat_url   = "https://api.dingtalk.com/v1.0/robot/groupMessages/send"
+	signel_chat_url  = "https://api.dingtalk.com/v1.0/robot/privateChatMessages/send"
+	media_id_url	 = "https://oapi.dingtalk.com/media/upload"
+	msg_key ="sampleText"
+)
 type Config struct {
 	// token相关
 	AccessTokenUrl string `json:"access_token_url"`
@@ -28,9 +46,14 @@ type Config struct {
 	MsgKey       string `json:"msg_key"`
 	//机器人
 	RobotAccessToken string `json:"robot_access_token"`
+	MediaIdUrl 	 string `json:"media_id_url"`
+	MediaId          string `json:"media_id"`
+	SignalChatUrl string `json:"signal_chat_url"`
 	//openai
-	OpenaiKey map[string]string `json:"openai_key"`
+	// OpenaiKey map[string]string `json:"openai_key"`
 }
+
+
 
 func init() {
 
@@ -51,17 +74,13 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	Flag = make(map[string]chan bool)
-	// 同步Flag的Key
-	for key := range Cfg.OpenaiKey {
-		Flag[key] = make(chan bool, 1)
-		Flag[key]<-true
-	}
+	Cfg.AccessTokenUrl = access_token_url
+	Cfg.GroupChatUrl = group_chat_url
+	Cfg.MediaIdUrl = media_id_url
+	Cfg.SignalChatUrl = signel_chat_url
+	Cfg.MsgKey = msg_key
 	Ding_GetToken()
-}
-func IsInKey(key string) bool {
-	_, ok := Cfg.OpenaiKey[key]
-	return ok
+	Ding_GetMediaId()
 }
 
 func JoinMsg(name, msg string) string {

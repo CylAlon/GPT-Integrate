@@ -1,15 +1,6 @@
 {
-    "说明": "请将每一个群成员一个分配一个openai key,将配置文件后缀.def去掉",
-    "access_token_url": "https://oapi.dingtalk.com/gettoken",
-    "group_chat_url": "https://api.dingtalk.com/v1.0/robot/groupMessages/send",
-    "app_key": "dingfhiurstkpebsmnwh",
-    "app_secret": "fIspMNdSJ2ZJrewJTCkEjqNWTSI3Rkn5U1tsm9SRARv1p73Q85Bv6HkfjtLez_92",
-    "master_id": "cylalon",
-    "msg_key": "sampleText",
-    "robot_access_token": "c81af966b51d9c8bae10c898f183b3d95c647f740317a246e8705f788bb39bd2",
-    "openai_key": {
-        "张三": "key",
-        "王麻子":"key",
-        "李四":"key"
-    }
+    "app_key": "dingdingkey",
+    "app_secret": "serect",
+    "master_id": "群主名",
+    "robot_access_token": "token"
 }
