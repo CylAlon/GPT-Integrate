@@ -15,6 +15,14 @@ var Flag map[string]chan bool
 var Lock sync.Mutex
 
 const (
+	
+	HELP_1	  = "@AI助手/h:查看帮助\n\n\n"
+	HELP_2 	  = "@AI助手+/b:查询账户余额\n\n"
+	HELP_3 	  = "@AI助手+问题:可以询问GPT问题(单条问题模式，不记录上下文)\n\n"
+	HELP_4 	  = "@AI助手+/c+空格+问题:可以询问GPT问题(上下文模式，记录以上5条数据)\n\n"
+	HELP_5 	  = "@AI助手+/i+空格+问题:绘图模式\n\n"
+
+	HELP 		= "**❓帮助：**\n\n"+HELP_1+HELP_2+HELP_3+HELP_4+HELP_5
 	ERROR         = "❌错误："
 	WARING        = "⚠️警告："
 	WAIT_LAST_MSG = "请等待上一条消息回复"
@@ -32,7 +40,7 @@ const (
 	group_chat_url   = "https://api.dingtalk.com/v1.0/robot/groupMessages/send"
 	signel_chat_url  = "https://api.dingtalk.com/v1.0/robot/privateChatMessages/send"
 	media_id_url	 = "https://oapi.dingtalk.com/media/upload"
-	msg_key ="sampleText"
+	msg_key ="sampleMarkdown"//sampleMarkdown sampleText
 )
 type Config struct {
 	// token相关
@@ -80,9 +88,9 @@ func init() {
 	Cfg.SignalChatUrl = signel_chat_url
 	Cfg.MsgKey = msg_key
 	Ding_GetToken()
-	Ding_GetMediaId()
+	// Ding_GetMediaId()
 }
 
 func JoinMsg(name, msg string) string {
-	return "@" + name + "  \r\n" + msg
+	return "# @" + name + "  \n\n" + msg
 }

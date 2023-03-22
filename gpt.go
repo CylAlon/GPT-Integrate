@@ -10,6 +10,10 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
+const (
+	MD_IMG_INS = "接下来我会给你指令，生成相应的图片，我希望你用Markdown语言生成，不要用反引号，不要用@AI助手 代码框，你需要用Unsplash API，遵循以下的格式：https://source.unsplash.com/1600x900/?< PUT YOUR QUERY HERE >。"
+)
+
 func OpenAI_35(issue, key string) string {
 	msg := []openai.ChatCompletionMessage{
 		{
@@ -36,7 +40,8 @@ func OpenAI_35_Context(msg []openai.ChatCompletionMessage, key string) string {
 	// 	}
 	// 	str= resp.Choices[0].Message.Content
 	// 	return str
-	result := make(chan string,1)
+
+	result := make(chan string, 1)
 	go func() {
 		client := openai.NewClient(key)
 		resp, err := client.CreateChatCompletion(
@@ -48,12 +53,12 @@ func OpenAI_35_Context(msg []openai.ChatCompletionMessage, key string) string {
 		)
 		if err != nil {
 			Errorln("ChatCompletion error:", err)
-			return 
+			return
 		}
 		result <- resp.Choices[0].Message.Content
 	}()
 	select {
-	case <-time.After(60 *5* time.Second):
+	case <-time.After(60 * 5 * time.Second):
 		Errorln("ChatCompletion error:", "timeout")
 		return ""
 	case res := <-result:
@@ -78,7 +83,6 @@ type Billing struct {
 		} `json:"data"`
 	} `json:"grants"`
 }
-
 
 func InitAiCli(key string) *resty.Client {
 	// return resty.New().SetTimeout(10*time.Second).SetHeader("Authorization", fmt.Sprintf("Bearer %s", Config.ApiKey)).SetProxy(Config.HttpProxy).SetRetryCount(3).SetRetryWaitTime(2 * time.Second)

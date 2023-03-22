@@ -16,7 +16,7 @@ func web_gin() {
 
 	r := gin.Default()
 	r.Use(LogFile())
-	str := "@全体成员 \r\n\r\n机器人已启动！！！ 赶快来试试吧！"
+	str := "# @全体成员 \n\n\n\n**ChatGPT已经启动！！！赶快来试试吧！**\n\n"+HELP
 	Router(r)
 	Infof(str)
 	go Ding_SendMsg(str)

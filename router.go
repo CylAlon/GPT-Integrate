@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -12,7 +11,6 @@ import (
 
 var nameList = make(map[string]string, 8)
 
-
 func get_root(r *gin.Engine) {
 	r.GET("/", func(c *gin.Context) {
 		//打印访问的ip以及post参数
@@ -22,7 +20,6 @@ func get_root(r *gin.Engine) {
 	})
 }
 func togroup(str string) {
-	fmt.Println("00000")
 	Infof(str)
 	Ding_SendMsg(str)
 }
@@ -30,7 +27,7 @@ func baseins(ins, str_h, name string) bool {
 	res := ""
 	switch ins {
 	case "/h":
-		res = str_h + "/+指令+空格+内容(内容可选) 例如：/balance或者/help\r\n当前有的命令:\r\n/h:查看帮助\r\n/b:查询账户余额\r\n/c:上下文对话"
+		res = str_h + HELP 
 	default:
 		return false
 	}
@@ -46,7 +43,7 @@ func post_root(r *gin.Engine) {
 		str_h := JoinMsg(name, "")
 		str := ""
 		Infof("接收到来自'%s'的消息:%s", name, content)
-		if baseins(ins, str_h, name){
+		if baseins(ins, str_h, name) {
 			goto Loop
 		}
 		// msg.SenderNick在不在nameList中
@@ -78,11 +75,11 @@ func post_root(r *gin.Engine) {
 					delete(nameList, name)
 					Lock.Unlock()
 					togroup(str)
-					Infof("----------------END----------------%s",time.Since(timstart))
+					Infof("----------------END----------------%s", time.Since(timstart))
 				}()
 			}
 		}
-		Loop:
+	Loop:
 		c.JSON(200, gin.H{
 			"message": "OK",
 		})
@@ -156,6 +153,13 @@ func msg_request(name, ins, issue string) string {
 	case "/c":
 		Infof("----------Context-----------")
 		res = request_context(name, issue)
+		if res == "" {
+			res = str_h + ERROR + TIMEOUT
+		} else {
+			res = str_h + res
+		}
+	case "/i":
+		res = OpenAI_35(MD_IMG_INS+" "+issue, nameList[name])
 		if res == "" {
 			res = str_h + ERROR + TIMEOUT
 		} else {

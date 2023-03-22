@@ -20,8 +20,15 @@ type MediaId struct {
 	CreatedAt   int    `json:"created_at"`
 	Type        string `json:"type"`
 }
+// {
+//     "title": "xxxx"，
+//     "text": "xxxx"
+//   }
 type MsgParam struct {
-	Content string `json:"content"`
+	// Content string `json:"content"`
+	Title string `json:"title"`
+	Text string `json:"text"`
+
 }
 
 
@@ -44,14 +51,15 @@ func Ding_SendMsg(msg string) {
 		"x-acs-dingtalk-access-token": Cfg.AccessToken,
 	}
 	msgparam := MsgParam{
-		Content: msg,
+		// Content: msg,
+		Title: "MarkDown Message",
+		Text: msg,
 	}
 	// 将msgparam转为字符串
 	jsonMsgParam, err := json.Marshal(msgparam)
 	if err != nil {
 		Infof("json转换失败")
 	}
-	// "{\"content\":\"" + msg + "\"}",
 	data := map[string]string{
 		"msgParam": string(jsonMsgParam),
 		"msgKey":   Cfg.MsgKey,
@@ -63,11 +71,10 @@ func Ding_SendMsg(msg string) {
 		Infof("json转换失败")
 	}
 	// 发送消息
-	b, err := HttpPost(url, header, jsonData)
+	_, err = HttpPost(url, header, jsonData)
 	if err != nil {
 		Infof("发送消息失败")
 	}
-	Infof("发送消息的结果是：%s", string(b))
 }
 func Ding_SendMsgSignel(msg string){
 	url := Cfg.SignalChatUrl
@@ -87,11 +94,25 @@ func Ding_SendMsgSignel(msg string){
 	if err != nil {
 		Infof("json转换失败")
 	}
+	Loop:
 	// 发送消息
-	_, err = HttpPost(url, header, jsonData)
+	body, err := HttpPost(url, header, jsonData)
 	if err != nil {
 		Infof("发送消息失败")
 	}
+	// 将body转map
+	var m map[string]interface{}
+	err = json.Unmarshal(body, &m)
+	if err != nil {
+		Infof("json转换失败")
+	}
+	// 判断processQueryKey在不在map中
+	if _, ok := m["processQueryKey"]; !ok {
+		// 不存在
+		Ding_GetToken()
+		goto Loop
+	}
+
 }
 func Ding_GetMediaId(){
 	url := Cfg.MediaIdUrl
