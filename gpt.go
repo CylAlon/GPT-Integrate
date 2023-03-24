@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	MD_IMG_INS = "接下来我会给你指令，生成相应的图片，我希望你用Markdown语言生成，不要用反引号，不要用@AI助手 代码框，你需要用Unsplash API，遵循以下的格式：https://source.unsplash.com/1600x900/?< PUT YOUR QUERY HERE >。"
+	MD_IMG_INS = "接下来我会给你指令，生成相应的图片，我希望你用Markdown语言生成，不要用反引号，不要用@AI助手 代码框，你需要用Unsplash API，遵循以下的格式：https://source.unsplash.com/1600x900/?< PUT YOUR QUERY HERE >。\n"
+	MD_INS = "加下来的问题，请使用markdown格式回答。\n"
 )
 
 func OpenAI_35(issue, key string) string {

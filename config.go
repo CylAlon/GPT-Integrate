@@ -40,7 +40,8 @@ const (
 	group_chat_url   = "https://api.dingtalk.com/v1.0/robot/groupMessages/send"
 	signel_chat_url  = "https://api.dingtalk.com/v1.0/robot/privateChatMessages/send"
 	media_id_url	 = "https://oapi.dingtalk.com/media/upload"
-	msg_key ="sampleMarkdown"//sampleMarkdown sampleText
+	msg_key_md ="sampleMarkdown"//sampleMarkdown sampleText
+	msg_key_txt ="sampleText"//sampleMarkdown sampleText
 )
 type Config struct {
 	// token相关
@@ -51,7 +52,7 @@ type Config struct {
 	//群聊
 	GroupChatUrl string `json:"group_chat_url"`
 	MasterId     string `json:"master_id"`
-	MsgKey       string `json:"msg_key"`
+	// MsgKey       string `json:"msg_key"`
 	//机器人
 	RobotAccessToken string `json:"robot_access_token"`
 	MediaIdUrl 	 string `json:"media_id_url"`
@@ -86,11 +87,11 @@ func init() {
 	Cfg.GroupChatUrl = group_chat_url
 	Cfg.MediaIdUrl = media_id_url
 	Cfg.SignalChatUrl = signel_chat_url
-	Cfg.MsgKey = msg_key
+	// Cfg.MsgKey = msg_key
 	Ding_GetToken()
 	// Ding_GetMediaId()
 }
 
 func JoinMsg(name, msg string) string {
-	return "# @" + name + "  \n\n" + msg
+	return "@" + name + "  \n\n" + msg
 }

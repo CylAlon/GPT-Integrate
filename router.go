@@ -21,13 +21,17 @@ func get_root(r *gin.Engine) {
 }
 func togroup(str string) {
 	Infof(str)
-	Ding_SendMsg(str)
+	Ding_SendMsg(str, msg_key_txt)
+}
+func togroup_md(str string) {
+	Infof(str)
+	Ding_SendMsg("# "+str, msg_key_md)
 }
 func baseins(ins, str_h, name string) bool {
 	res := ""
 	switch ins {
 	case "/h":
-		res = str_h + HELP 
+		res = str_h + HELP
 	default:
 		return false
 	}
@@ -56,28 +60,32 @@ func post_root(r *gin.Engine) {
 			user, err := SqlGetUserForName(msg.SenderNick)
 			if err != nil {
 				Infof("没有找到用户:%s", name)
-				user, err = SqlGetUserForid(0)
+				user, err = SqlGetUserForName("root")
 				if err != nil {
 					Infof("没有找到默认用户")
 					str = str_h + ERROR + NO_FIND_KEY
 					togroup(str)
 				}
-			} else {
-				// 将这个user的信息存入缓存
-				Lock.Lock()
-				nameList[name] = user.Key
-				Lock.Unlock()
-				go func() {
-					timstart := time.Now()
-					str = msg_request(name, ins, issue)
-					// 删除缓存
-					Lock.Lock()
-					delete(nameList, name)
-					Lock.Unlock()
-					togroup(str)
-					Infof("----------------END----------------%s", time.Since(timstart))
-				}()
 			}
+			// 将这个user的信息存入缓存
+			Lock.Lock()
+			nameList[name] = user.Key
+			Lock.Unlock()
+			go func() {
+				timstart := time.Now()
+				str = msg_request(name, ins, issue)
+				// 删除缓存
+				Lock.Lock()
+				delete(nameList, name)
+				Lock.Unlock()
+				if ins == "/m" {
+					togroup_md(str)
+				} else {
+					togroup(str)
+				}
+				Infof("----------------END----------------%s", time.Since(timstart))
+			}()
+
 		}
 	Loop:
 		c.JSON(200, gin.H{
@@ -159,11 +167,18 @@ func msg_request(name, ins, issue string) string {
 			res = str_h + res
 		}
 	case "/i":
-		res = OpenAI_35(MD_IMG_INS+" "+issue, nameList[name])
+		res = OpenAI_35(MD_IMG_INS+issue, nameList[name])
 		if res == "" {
 			res = str_h + ERROR + TIMEOUT
 		} else {
 			res = str_h + res
+		}
+	case "/m":
+		data := OpenAI_35(MD_INS+issue, nameList[name])
+		if data == "" {
+			res = str_h + ERROR + TIMEOUT
+		} else {
+			res = str_h + data
 		}
 	case "":
 		data := OpenAI_35(issue, nameList[name])
