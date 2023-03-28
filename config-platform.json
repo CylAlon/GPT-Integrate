@@ -1,0 +1,9 @@
+{
+    "Platform": "dingtalk",
+    "dingtalk": {
+        "app_key": "",
+        "app_secret": "",
+        "webhook": ""
+
+    }
+}

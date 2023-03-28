@@ -1,0 +1,19 @@
+{
+    "comment":[
+        "这个字段用于json注释",
+        "修改这个文件，你的需要了解官网的字段解释。https://platform.openai.com/docs/api-reference/introduction",
+        "这里的字段只有部分，其他没有出现的字段并不希望你去改"
+
+    ],
+    "gpt_keys":[
+        ""
+    ],
+    "model":"gpt-3.5-turbo-0301",
+    "role":"",
+    "max_tokens":4000,
+    "temperature":0.9,
+    "top_p":1,
+    "n":1,
+    "presence_penalty":0,
+    "frequency_penalty":0
+}

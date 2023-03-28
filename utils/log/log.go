@@ -1,4 +1,4 @@
-package main
+package log
 
 import (
 	"fmt"
@@ -16,7 +16,6 @@ var logWriter *rotatelogs.RotateLogs
 func LogInit(folder string) {
 	var err error
 	//实例化
-	// filename := path + " %Y-%m-%d %H %M.log"
 	filename := folder + "/" + "%Y-%m-%d.log"
 	logger = log.New()
 	// 设置 rotatelogs
@@ -49,7 +48,7 @@ func Info(args ...interface{}) {
 	logger.Infoln(args...)
 }
 func Infof(format string, args ...interface{}) {
-	fmt.Println(fmt.Sprintf(format, args...))
+	// fmt.Println(fmt.Sprintf(format, args...))
 	logger.Infof(format, args...)
 }
 func Println(args ...interface{}) {
@@ -60,7 +59,7 @@ func Println(args ...interface{}) {
 }
 func Errorln(args ...interface{}) {
 	/********************************************/
-	fmt.Println(args...)
+	// fmt.Println(args...)
 	/********************************************/
 	logger.Errorln(args...)
 }

@@ -1,25 +1,29 @@
 package main
 
 import (
+	"GPT-Integrate/config"
+	"io"
+	"GPT-Integrate/router"
+	lg "GPT-Integrate/utils/log"
+	"fmt"
+
 	"github.com/gin-gonic/gin"
-	
 )
 
 func main() {
 
-	web_gin()
+	GinWeb()
 }
-func web_gin() {
+func GinWeb() {
 
-	// gin.DefaultWriter = ioutil.Discard
-	// gin.SetMode(gin.ReleaseMode)
-	LogInit("./log")
+	gin.DefaultWriter = io.Discard
+	gin.SetMode(gin.ReleaseMode)
+	config.ConfigInit()
+
+	lg.LogInit("./log")
 
 	r := gin.Default()
-	r.Use(LogFile())
-	str := "# @全体成员 \n\n\n\n**ChatGPT已经启动！！！赶快来试试吧！**\n\n"+HELP
-	Router(r)
-	Infof(str)
-	go Ding_SendMsg(str,msg_key_md)
-	r.Run(":8100") // 监听并在 0.0.0.0:8080 上启动服务
+	router.Router(r)
+	lg.Infof("%s:%d", config.GetConfigHttp().HttpHost, config.GetConfigHttp().HttpPort)
+	r.Run(fmt.Sprintf(":%d", config.GetConfigHttp().HttpPort)) // 监听并在 0.0.0.0:8080 上启动服务
 }
