@@ -1,9 +1,9 @@
 {
     "Platform": "dingtalk",
     "dingtalk": {
-        "app_key": "",
-        "app_secret": "",
-        "webhook": ""
+        "app_key": "dingfhiurstkpebsmnwh",
+        "app_secret": "fIspMNdSJ2ZJrewJTCkEjqNWTSI3Rkn5U1tsm9SRARv1p73Q85Bv6HkfjtLez_92",
+        "webhook": "c81af966b51d9c8bae10c898f183b3d95c647f740317a246e8705f788bb39bd2"
 
     }
 }
